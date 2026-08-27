@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "set_name": "thai_personal_name_test_candidates",
+  "status": "candidate_needs_native_review",
+  "purpose": "Regression candidates for Thai given-name pronunciation and clinic-code analysis. Confirm the spoken syllables with a Thai-language reviewer before promoting a case to an automated pass/fail test.",
+  "field_definitions": {
+    "name": "Thai given name supplied as the API input",
+    "field": "API field to use when exercising the case",
+    "expected_pronunciation": "Approved hyphen-separated spoken syllables; null until native review is complete",
+    "notes": "Why the case needs pronunciation review"
+  },
+  "cases": [
+    {
+      "name": "ศักดิ์ศรี",
+      "field": "given_name",
+      "expected_pronunciation": null,
+      "notes": "Contains silent-mark spelling and a written-versus-pronounced initial distinction."
+    },
+    {
+      "name": "เสาวรส",
+      "field": "given_name",
+      "expected_pronunciation": null,
+      "notes": "A multi-syllable personal name whose spelling should be checked against the intended reading."
+    },
+    {
+      "name": "เหมยลี่",
+      "field": "given_name",
+      "expected_pronunciation": null,
+      "notes": "Contains a leading ห that may affect the written and sound-bearing initial analysis."
+    },
+    {
+      "name": "ฐาปกร",
+      "field": "given_name",
+      "expected_pronunciation": null,
+      "notes": "Requires confirmation of syllable boundaries and the intended pronunciation of ฐ."
+    },
+    {
+      "name": "อมร",
+      "field": "given_name",
+      "expected_pronunciation": null,
+      "notes": "Requires confirmation of the implicit first-syllable vowel."
+    },
+    {
+      "name": "เฌอลิน",
+      "field": "given_name",
+      "expected_pronunciation": null,
+      "notes": "Requires confirmation of the intended reading of the uncommon initial letter เฌอ."
+    },
+    {
+      "name": "รฐา",
+      "field": "given_name",
+      "expected_pronunciation": null,
+      "notes": "Requires confirmation of syllable boundaries and the intended pronunciation of ฐ."
+    }
+  ]
+}

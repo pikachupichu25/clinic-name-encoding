@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>รหัสชื่อคลินิก</title>
+  <style>
+    :root {
+      --ink: #162923;
+      --forest: #245846;
+      --mist: #eef5ee;
+      --paper: #fffdf8;
+      --line: #cddbcf;
+      --muted: #5f7269;
+      --warning-bg: #fff1d8;
+      --warning-ink: #795309;
+      --error-bg: #fff0ee;
+      --error-ink: #a0372a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      font-family: "Noto Sans Thai", "Th Sarabun New", Tahoma, sans-serif;
+      background:
+        linear-gradient(135deg, rgba(211, 229, 214, 0.72), transparent 50%),
+        var(--mist);
+    }
+
+    main {
+      width: min(100%, 760px);
+      margin: 0 auto;
+      padding: 52px 20px 72px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--forest);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Noto Serif Thai", serif;
+      font-size: clamp(34px, 7vw, 50px);
+      font-weight: 700;
+      line-height: 1.12;
+    }
+
+    .intro {
+      max-width: 610px;
+      margin: 14px 0 30px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.65;
+    }
+
+    .card {
+      padding: clamp(22px, 5vw, 38px);
+      border: 1px solid rgba(36, 88, 70, 0.18);
+      border-radius: 24px;
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 18px 50px rgba(32, 74, 51, 0.13);
+    }
+
+    .field + .field { margin-top: 20px; }
+
+    .field-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .field-label-row label { margin: 0; }
+
+    input:not([type="radio"]) {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: var(--ink);
+      font: inherit;
+      font-size: 21px;
+      background: #fff;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    input:not([type="radio"]):focus {
+      border-color: var(--forest);
+      box-shadow: 0 0 0 4px rgba(36, 88, 70, 0.14);
+    }
+
+    .provider-field {
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .provider-field legend {
+      padding: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .provider-options {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .provider-option {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      cursor: pointer;
+      background: #fff;
+      transition: border-color 160ms ease, background 160ms ease;
+    }
+
+    .provider-option:has(input:checked) {
+      border-color: var(--forest);
+      background: #f2f8f2;
+    }
+
+    .provider-option input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--forest);
+    }
+
+    .provider-option strong, .provider-option small { display: block; }
+    .provider-option strong { font-size: 15px; }
+    .provider-option small { margin-top: 1px; color: var(--muted); font-size: 12px; font-weight: 400; }
+
+    .hint {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .speech-button {
+      width: auto;
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid var(--forest);
+      border-radius: 999px;
+      color: var(--forest);
+      font-size: 14px;
+      font-weight: 800;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .speech-button:hover:not(:disabled), .speech-button:active:not(:disabled) {
+      color: white;
+      background: var(--forest);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .speech-button[data-state="listening"], .speech-button[data-state="requesting_permission"] {
+      color: white;
+      background: #a0372a;
+      border-color: #a0372a;
+      animation: listening-pulse 1.4s ease-in-out infinite;
+    }
+
+    .speech-button:focus-visible, .speech-alternative:focus-visible {
+      outline: 3px solid rgba(36, 88, 70, 0.35);
+      outline-offset: 2px;
+    }
+
+    .speech-privacy, .speech-status, .speech-preview {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .speech-privacy { margin: 16px 0 0; color: var(--muted); }
+    .speech-status { min-height: 20px; margin: 12px 0 0; color: var(--forest); font-weight: 700; }
+    .speech-preview { margin: 7px 0 0; color: var(--muted); }
+
+    .speech-review {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #e8c57e;
+      border-radius: 12px;
+      background: #fffaf0;
+    }
+
+    .speech-review-title { margin: 0 0 8px; color: var(--warning-ink); font-size: 13px; font-weight: 800; }
+    .speech-alternatives { display: flex; flex-wrap: wrap; gap: 8px; }
+    .speech-alternative {
+      width: auto;
+      margin: 0;
+      padding: 7px 10px;
+      border: 1px solid #d6a946;
+      border-radius: 8px;
+      color: var(--warning-ink);
+      font-size: 15px;
+      background: #fff;
+      box-shadow: none;
+    }
+    .speech-alternative[aria-pressed="true"] { color: white; background: var(--warning-ink); }
+    .speech-alternative:hover:not(:disabled), .speech-alternative:active:not(:disabled) { transform: none; box-shadow: none; }
+
+    @keyframes listening-pulse {
+      50% { box-shadow: 0 0 0 5px rgba(160, 55, 42, 0.15); }
+    }
+
+    button {
+      width: 100%;
+      margin-top: 26px;
+      border: 0;
+      border-radius: 12px;
+      padding: 15px 18px;
+      color: white;
+      font: inherit;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      background: var(--forest);
+      box-shadow: 0 7px 0 #173c2f;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 9px 0 #173c2f;
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 3px 0 #173c2f;
+    }
+
+    button:disabled { cursor: wait; opacity: 0.65; }
+
+    .message, .results { display: none; }
+
+    .message {
+      margin-top: 22px;
+      padding: 13px 15px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .message.error { color: var(--error-ink); background: var(--error-bg); }
+    .message.warning { color: var(--warning-ink); background: var(--warning-bg); }
+
+    .summary {
+      margin-top: 28px;
+      padding: 22px;
+      border-radius: 16px;
+      color: white;
+      background: var(--ink);
+    }
+
+    .summary-label {
+      margin: 0 0 8px;
+      color: #cbe3d3;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .summary-code {
+      --summary-digit-width: clamp(20px, 5.4vw, 34px);
+      display: flex;
+      align-items: flex-start;
+      gap: clamp(4px, 1.2vw, 10px);
+      margin-top: 4px;
+    }
+
+    .summary-group { min-width: 0; }
+
+    .summary-units {
+      display: flex;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    .summary-unit {
+      width: calc(var(--digit-count) * var(--summary-digit-width));
+      min-width: 0;
+      text-align: center;
+    }
+
+    .summary-value {
+      display: flex;
+      justify-content: center;
+      gap: clamp(1px, 0.45vw, 4px);
+      min-height: 1.05em;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: clamp(26px, 6.5vw, 42px);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .summary-digit { display: inline-block; }
+
+    .summary-breakdown {
+      min-height: 1.4em;
+      margin-top: 7px;
+      overflow-wrap: anywhere;
+      color: #a8c9b4;
+      font-size: clamp(9px, 2.3vw, 12px);
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .summary-separator {
+      width: clamp(10px, 2.8vw, 18px);
+      padding-top: 1px;
+      color: #cbe3d3;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: clamp(26px, 6.5vw, 42px);
+      font-weight: 800;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .summary-name {
+      margin: 10px 0 0;
+      color: white;
+      font-family: Georgia, "Noto Serif Thai", serif;
+      font-size: clamp(16px, 3.8vw, 21px);
+      font-weight: 700;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .breakdowns { margin-top: 30px; }
+
+    .section-title {
+      margin: 26px 0 10px;
+      color: var(--forest);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    .row {
+      display: grid;
+      grid-template-columns: minmax(125px, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .row-name { font-size: 16px; font-weight: 700; }
+    .row-detail { margin-top: 4px; color: var(--muted); font-size: 13px; }
+    .codes { display: flex; align-items: center; gap: 6px; }
+
+    .code {
+      min-width: 42px;
+      padding: 8px 9px;
+      border-radius: 8px;
+      color: var(--forest);
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 17px;
+      font-weight: 800;
+      text-align: center;
+      background: #e4f0e6;
+    }
+
+    .dot { color: #9cad9f; }
+
+    .example {
+      width: auto;
+      margin: 24px 0 0;
+      padding: 0;
+      border-radius: 0;
+      color: var(--forest);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: underline;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .example:hover:not(:disabled), .example:active:not(:disabled) {
+      transform: none;
+      box-shadow: none;
+    }
+
+    @media (max-width: 460px) {
+      main { padding: 34px 14px 52px; }
+      .row { grid-template-columns: 1fr; gap: 9px; }
+      .summary-code { --summary-digit-width: clamp(18px, 5.8vw, 26px); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Clinic name encoder</p>
+    <h1>แปลงชื่อเป็นรหัส</h1>
+    <p class="intro">
+      กรอกชื่อและนามสกุลเต็ม ระบบจะวิเคราะห์พยางค์ออกเสียง แล้วแปลงเป็นรหัส
+      <strong>6 หลัก-2 หลัก</strong>
+    </p>
+
+    <section class="card" aria-label="แบบฟอร์มแปลงชื่อเป็นรหัส">
+      <div class="field">
+        <div class="field-label-row">
+          <label for="givenName">ชื่อ</label>
+          <button id="givenSpeechButton" class="speech-button" type="button" aria-label="พูดชื่อ" aria-pressed="false" data-state="idle">🎙 พูดชื่อ</button>
+        </div>
+        <input id="givenName" type="text" lang="th" autocomplete="off" placeholder="เช่น สมชาย" />
+        <p class="hint">กรอกชื่อจริงเต็ม</p>
+        <p id="givenSpeechPreview" class="speech-preview" hidden></p>
+        <div id="givenSpeechReview" class="speech-review" hidden aria-label="ตัวเลือกข้อความชื่อที่รู้จำได้"></div>
+      </div>
+
+      <div class="field">
+        <div class="field-label-row">
+          <label for="surname">นามสกุล</label>
+          <button id="surnameSpeechButton" class="speech-button" type="button" aria-label="พูดนามสกุล" aria-pressed="false" data-state="idle">🎙 พูดนามสกุล</button>
+        </div>
+        <input id="surname" type="text" lang="th" autocomplete="off" placeholder="เช่น ใจดี" />
+        <p class="hint">กรอกนามสกุลเต็ม</p>
+        <p id="surnameSpeechPreview" class="speech-preview" hidden></p>
+        <div id="surnameSpeechReview" class="speech-review" hidden aria-label="ตัวเลือกข้อความนามสกุลที่รู้จำได้"></div>
+      </div>
+
+      <fieldset class="field provider-field">
+        <legend>ผู้ให้บริการวิเคราะห์</legend>
+        <div class="provider-options">
+          <label class="provider-option">
+            <input type="radio" name="provider" value="pythainlp" checked />
+            <span><strong>ThaiNLP</strong><small>ค่าเริ่มต้น · วิเคราะห์ในเครื่อง</small></span>
+          </label>
+          <label class="provider-option">
+            <input type="radio" name="provider" value="gemini" />
+            <span><strong>Gemini</strong><small>วิเคราะห์ด้วย AI</small></span>
+          </label>
+        </div>
+      </fieldset>
+
+      <p id="speechPrivacy" class="speech-privacy">เมื่อใช้ไมโครโฟน เบราว์เซอร์อาจส่งเสียงไปยังบริการรู้จำเสียงของผู้ให้บริการเบราว์เซอร์ ระบบนี้ไม่บันทึกหรือส่งไฟล์เสียงไปยังคลินิก</p>
+      <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
+
+      <button id="convertButton" type="button">วิเคราะห์และสร้างรหัส</button>
+      <div id="error" class="message error" role="alert"></div>
+      <div id="warning" class="message warning" role="status"></div>
+
+      <div id="results" class="results">
+        <section class="summary" aria-live="polite">
+          <p class="summary-label">รหัสรวม 8 หลัก</p>
+          <div id="summaryCode" class="summary-code"></div>
+        </section>
+
+        <div class="breakdowns">
+          <div class="row">
+            <div><div id="givenFirstName" class="row-name"></div><div id="givenFirstDetail" class="row-detail"></div></div>
+            <div id="givenFirstCodes" class="codes"></div>
+          </div>
+          <div class="row">
+            <div><div id="givenLastName" class="row-name"></div><div id="givenLastDetail" class="row-detail"></div></div>
+            <div id="givenLastCodes" class="codes"></div>
+          </div>
+
+          <p class="section-title">รายละเอียดนามสกุล</p>
+          <div class="row">
+            <div><div id="surnameFirstName" class="row-name"></div><div id="surnameFirstDetail" class="row-detail"></div></div>
+            <div id="surnameFirstCodes" class="codes"></div>
+          </div>
+          <div class="row">
+            <div><div id="surnameLastName" class="row-name"></div><div id="surnameLastDetail" class="row-detail"></div></div>
+            <div id="surnameLastCodes" class="codes"></div>
+          </div>
+        </div>
+      </div>
+
+      <button id="exampleButton" class="example" type="button">ลองตัวอย่าง: สมชาย ใจดี</button>
+    </section>
+  </main>
+
+  <script>
+    const INITIAL_CODES = {
+      "ก": "01", "ข": "02", "ค": "03", "ฆ": "04", "ง": "05", "จ": "06", "ฉ": "07", "ช": "08", "ซ": "09", "ฌ": "10", "ญ": "11", "ฎ": "12", "ฏ": "13", "ฐ": "14", "ฑ": "15", "ฒ": "16", "ณ": "17", "ด": "18", "ต": "19", "ถ": "20", "ท": "21", "ธ": "22", "น": "23", "บ": "24", "ป": "25", "ผ": "26", "ฝ": "27", "พ": "28", "ฟ": "29", "ภ": "30", "ม": "31", "ย": "32", "ร": "33", "ล": "34", "ว": "35", "ศ": "36", "ษ": "37", "ส": "38", "ห": "39", "ฬ": "40", "อ": "41", "ฮ": "41"
+    };
+
+    const VOWEL_CODES = {
+      "อะ": 1, "อา": 1, "อิ": 2, "อี": 2, "อึ": 3, "อื": 3,
+      "อุ": 4, "อู": 4, "เอะ": 5, "เอ": 5, "แอะ": 6, "แอ": 6,
+      "โอะ": 7, "โอ": 7, "เอาะ": 8, "ออ": 8, "เออะ": 9, "เออ": 9,
+      "เอือะ": 0, "เอือ": 0, "เอียะ": 0, "เอีย": 0, "อัวะ": 0, "อัว": 0,
+      "เอา": 18, "ไอ": 17
+    };
+
+    // Surname encoding uses the same table except for these three vowel sounds.
+    const SURNAME_VOWEL_CODES = {
+      ...VOWEL_CODES,
+      "เอา": 1, "ไอ": 1, "อำ": 1
+    };
+
+    // API syllables provide both a canonical final sound and its Thai final group.
+    // Keep both keys in one map so either representation can resolve to the
+    // clinic's numeric code.
+    const FINAL_CODE_MAP = {
+      "": 0, "ก": 1, "ข": 1, "ค": 1, "ฆ": 1,
+      "ด": 2, "ต": 2, "จ": 2, "ช": 2, "ซ": 2, "ฎ": 2, "ฏ": 2, "ฐ": 2, "ฑ": 2, "ฒ": 2, "ถ": 2, "ท": 2, "ธ": 2, "ศ": 2, "ษ": 2, "ส": 2,
+      "บ": 3, "ป": 3, "พ": 3, "ฟ": 3, "ภ": 3, "ม": 6,
+      "ง": 4, "น": 5, "ณ": 5, "ญ": 5, "ร": 5, "ล": 5, "ฬ": 5,
+      "ว": 8, "ย": 7,
+      "แม่ ก กา": 0, "แม่กก": 1, "แม่กด": 2, "แม่กบ": 3, "แม่กม": 6,
+      "แม่กง": 4, "แม่กน": 5, "แม่เกอว": 8, "แม่เกย": 7
+    };
+
+    const givenNameInput = document.getElementById("givenName");
+    const surnameInput = document.getElementById("surname");
+    const convertButton = document.getElementById("convertButton");
+    const exampleButton = document.getElementById("exampleButton");
+    const errorBox = document.getElementById("error");
+    const warningBox = document.getElementById("warning");
+    const results = document.getElementById("results");
+    const speechStatus = document.getElementById("speechStatus");
+    const speechPrivacy = document.getElementById("speechPrivacy");
+    const speechFields = {
+      given: {
+        input: givenNameInput,
+        button: document.getElementById("givenSpeechButton"),
+        preview: document.getElementById("givenSpeechPreview"),
+        review: document.getElementById("givenSpeechReview"),
+        idleLabel: "🎙 พูดชื่อ",
+        activeLabel: "■ หยุดฟัง"
+      },
+      surname: {
+        input: surnameInput,
+        button: document.getElementById("surnameSpeechButton"),
+        preview: document.getElementById("surnameSpeechPreview"),
+        review: document.getElementById("surnameSpeechReview"),
+        idleLabel: "🎙 พูดนามสกุล",
+        activeLabel: "■ หยุดฟัง"
+      }
+    };
+    const SpeechRecognitionConstructor = typeof window === "undefined"
+      ? null
+      : window.SpeechRecognition || window.webkitSpeechRecognition;
+    let activeSpeechField = null;
+    let activeRecognition = null;
+    let speechState = SpeechRecognitionConstructor ? "idle" : "unsupported";
+    let pendingSpeechField = null;
+    let speechStopWasUserInitiated = false;
+    let speechFinalReceived = false;
+
+    function setSpeechStatus(message) {
+      speechStatus.textContent = message;
+    }
+
+    function updateSpeechControls() {
+      for (const [field, config] of Object.entries(speechFields)) {
+        const active = field === activeSpeechField;
+        config.button.textContent = active ? config.activeLabel : config.idleLabel;
+        config.button.dataset.state = active ? speechState : "idle";
+        config.button.setAttribute("aria-pressed", String(active));
+        config.button.disabled = active && speechState === "requesting_permission";
+      }
+    }
+
+    function hideSpeechPreview(field) {
+      const preview = speechFields[field].preview;
+      preview.textContent = "";
+      preview.hidden = true;
+    }
+
+    function clearSpeechReview(field) {
+      const reviewBox = speechFields[field].review;
+      reviewBox.textContent = "";
+      reviewBox.hidden = true;
+    }
+
+    function renderSpeechAlternatives(field, alternatives) {
+      const config = speechFields[field];
+      const reviewBox = config.review;
+      reviewBox.textContent = "";
+      const title = document.createElement("p");
+      title.className = "speech-review-title";
+      title.textContent = "ตรวจสอบข้อความที่ได้ยิน แล้วเลือกคำที่ถูกต้องหรือแก้ไขในช่องด้านบน";
+      const choices = document.createElement("div");
+      choices.className = "speech-alternatives";
+
+      alternatives.forEach((transcript, index) => {
+        const choice = document.createElement("button");
+        choice.type = "button";
+        choice.className = "speech-alternative";
+        choice.textContent = transcript;
+        choice.setAttribute("aria-pressed", String(index === 0));
+        choice.addEventListener("click", () => {
+          config.input.value = transcript;
+          for (const button of choices.children) button.setAttribute("aria-pressed", "false");
+          choice.setAttribute("aria-pressed", "true");
+          config.input.focus();
+          setSpeechStatus(`เลือกข้อความสำหรับ${field === "given" ? "ชื่อ" : "นามสกุล"}แล้ว สามารถแก้ไขต่อได้`);
+        });
+        choices.appendChild(choice);
+      });
+
+      reviewBox.append(title, choices);
+      reviewBox.hidden = false;
+    }
+
+    function finishSpeechSession() {
+      activeSpeechField = null;
+      activeRecognition = null;
+      speechState = "idle";
+      updateSpeechControls();
+      const nextField = pendingSpeechField;
+      pendingSpeechField = null;
+      if (nextField) startSpeech(nextField);
+    }
+
+    function speechErrorMessage(error) {
+      const messages = {
+        "not-allowed": "ไม่อนุญาตให้ใช้ไมโครโฟน โปรดอนุญาตไมโครโฟนในการตั้งค่าเบราว์เซอร์ หรือพิมพ์ชื่อแทน",
+        "service-not-allowed": "เบราว์เซอร์ไม่อนุญาตบริการรู้จำเสียง โปรดอนุญาตไมโครโฟนหรือพิมพ์ชื่อแทน",
+        "audio-capture": "ไม่พบไมโครโฟนที่ใช้งานได้ โปรดตรวจสอบอุปกรณ์หรือพิมพ์ชื่อแทน",
+        "no-speech": "ไม่ได้ยินเสียงพูด โปรดลองใหม่และพูดเฉพาะชื่อหรือนามสกุล",
+        "network": "เชื่อมต่อบริการรู้จำเสียงไม่ได้ โปรดตรวจสอบอินเทอร์เน็ตหรือพิมพ์ชื่อแทน"
+      };
+      return messages[error] || "ไม่สามารถรู้จำเสียงได้ โปรดลองใหม่หรือพิมพ์ชื่อแทน";
+    }
+
+    function handleSpeechError(error) {
+      if (error === "aborted" && speechStopWasUserInitiated) {
+        setSpeechStatus("");
+        return;
+      }
+      setSpeechStatus(speechErrorMessage(error));
+    }
+
+    function stopActiveSpeech(nextField = null) {
+      pendingSpeechField = nextField;
+      if (!activeRecognition) {
+        finishSpeechSession();
+        return;
+      }
+      speechStopWasUserInitiated = true;
+      setSpeechStatus("หยุดการฟังแล้ว");
+      activeRecognition.stop();
+    }
+
+    function startSpeech(field) {
+      if (!SpeechRecognitionConstructor) return;
+      if (activeRecognition) {
+        if (activeSpeechField === field) stopActiveSpeech();
+        else stopActiveSpeech(field);
+        return;
+      }
+
+      const config = speechFields[field];
+      clearSpeechReview(field);
+      hideSpeechPreview(field);
+      speechFinalReceived = false;
+      speechStopWasUserInitiated = false;
+      activeSpeechField = field;
+      speechState = "requesting_permission";
+      updateSpeechControls();
+      setSpeechStatus("กำลังขออนุญาตใช้ไมโครโฟน…");
+
+      const recognition = new SpeechRecognitionConstructor();
+      activeRecognition = recognition;
+      recognition.lang = "th-TH";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 3;
+
+      recognition.onstart = () => {
+        if (activeRecognition !== recognition) return;
+        speechState = "listening";
+        updateSpeechControls();
+        setSpeechStatus(`กำลังฟัง… โปรดพูด${field === "given" ? "ชื่อ" : "นามสกุล"}`);
+      };
+      recognition.onresult = event => {
+        if (activeRecognition !== recognition) return;
+        let interimTranscript = "";
+        let alternatives = [];
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+          const transcripts = Array.from(result)
+            .slice(0, 3)
+            .map(item => item.transcript.trim())
+            .filter(Boolean);
+          if (result.isFinal) alternatives = transcripts;
+          else interimTranscript += transcripts[0] || "";
+        }
+
+        if (interimTranscript) {
+          config.preview.textContent = `ได้ยินชั่วคราว: ${interimTranscript}`;
+          config.preview.hidden = false;
+        }
+        if (alternatives.length) {
+          const uniqueAlternatives = [...new Set(alternatives)].slice(0, 3);
+          speechFinalReceived = true;
+          config.input.value = uniqueAlternatives[0];
+          hideSpeechPreview(field);
+          renderSpeechAlternatives(field, uniqueAlternatives);
+          speechState = "reviewing";
+          updateSpeechControls();
+          setSpeechStatus("ได้ข้อความแล้ว โปรดตรวจสอบหรือแก้ไขชื่อก่อนวิเคราะห์รหัส");
+        }
+      };
+      recognition.onerror = event => {
+        if (activeRecognition !== recognition) return;
+        speechState = "error";
+        handleSpeechError(event.error);
+      };
+      recognition.onend = () => {
+        if (activeRecognition !== recognition) return;
+        const endedWithReview = speechFinalReceived;
+        const wasStopped = speechStopWasUserInitiated;
+        const endedWithError = speechState === "error";
+        const hasQueuedSession = Boolean(pendingSpeechField);
+        finishSpeechSession();
+        if (!endedWithReview && !wasStopped && !endedWithError) {
+          setSpeechStatus("ไม่ได้ยินเสียงพูด โปรดลองใหม่หรือพิมพ์ชื่อแทน");
+        } else if (wasStopped && !hasQueuedSession) {
+          setSpeechStatus("");
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch (error) {
+        if (activeRecognition === recognition) {
+          speechState = "error";
+          handleSpeechError("unknown");
+          finishSpeechSession();
+        }
+      }
+    }
+
+    function initializeSpeechRecognition() {
+      if (!SpeechRecognitionConstructor) {
+        for (const config of Object.values(speechFields)) config.button.hidden = true;
+        speechPrivacy.hidden = true;
+        setSpeechStatus("เบราว์เซอร์นี้ไม่รองรับการพูดชื่อ โปรดพิมพ์ชื่อและนามสกุล");
+        return;
+      }
+      for (const [field, config] of Object.entries(speechFields)) {
+        config.button.addEventListener("click", () => startSpeech(field));
+      }
+      updateSpeechControls();
+    }
+
+    function encodeSyllable(value, vowelCodes = VOWEL_CODES) {
+      if (!value || typeof value !== "object") {
+        throw new Error("ต้องใช้ข้อมูลพยางค์จากระบบวิเคราะห์เพื่อสร้างรหัส");
+      }
+      const parsed = {
+        text: value.encoding_form,
+        initial: value.initial,
+        vowel: value.vowel,
+        final: value.final,
+        final_group: value.final_group
+      };
+      const code = {
+        initial: INITIAL_CODES[parsed.initial],
+        vowel: vowelCodes[parsed.vowel],
+        final: FINAL_CODE_MAP[parsed.final] ?? FINAL_CODE_MAP[parsed.final_group]
+      };
+      const missing = Object.entries(code).filter(([, value]) => value === undefined).map(([part]) => part);
+      if (missing.length) throw new Error(`ยังไม่มีรหัส${missing.join(", ")}สำหรับ "${parsed.text}"`);
+      return { ...parsed, code };
+    }
+
+    function selectedSyllable(nameResult, position) {
+      const index = position === "first" ? nameResult.first_syllable_index : nameResult.last_syllable_index;
+      const syllable = nameResult.syllables[index];
+      if (!syllable?.encoding_form || !syllable.initial || !syllable.vowel || (!Object.hasOwn(syllable, "final") && !syllable.final_group)) {
+        throw new Error("API ไม่ได้ส่งข้อมูลพยางค์ครบสำหรับเข้ารหัส");
+      }
+      return syllable;
+    }
+
+    function codePill(value) { return `<span class="code">${value}</span>`; }
+    function syllableCodeHtml(encoded, { includeInitial = true, includeFinal = true } = {}) {
+      const parts = [];
+      if (includeInitial) parts.push(codePill(encoded.code.initial));
+      parts.push(codePill(encoded.code.vowel));
+      if (includeFinal) parts.push(codePill(encoded.code.final));
+      return parts.join('<span class="dot">•</span>');
+    }
+
+    function summaryUnit(value, breakdown) {
+      const unit = document.createElement("div");
+      const code = String(value);
+      unit.className = "summary-unit";
+      unit.style.setProperty("--digit-count", Math.max(code.length, 1));
+      unit.setAttribute("aria-label", `${code}: ${breakdown}`);
+
+      const valueLine = document.createElement("div");
+      valueLine.className = "summary-value";
+      for (const digit of code) {
+        const digitElement = document.createElement("span");
+        digitElement.className = "summary-digit";
+        digitElement.textContent = digit;
+        valueLine.appendChild(digitElement);
+      }
+
+      const detail = document.createElement("div");
+      detail.className = "summary-breakdown";
+      detail.textContent = breakdown;
+      unit.append(valueLine, detail);
+      return unit;
+    }
+
+    function summarySeparator() {
+      const separator = document.createElement("div");
+      separator.className = "summary-separator";
+      separator.setAttribute("aria-hidden", "true");
+      separator.textContent = "-";
+      return separator;
+    }
+
+    function summaryGroup(units, name) {
+      const group = document.createElement("div");
+      group.className = "summary-group";
+      const unitLine = document.createElement("div");
+      unitLine.className = "summary-units";
+      unitLine.append(...units.map(([value, breakdown]) => summaryUnit(value, breakdown)));
+
+      const nameLine = document.createElement("div");
+      nameLine.className = "summary-name";
+      nameLine.textContent = name;
+      group.append(unitLine, nameLine);
+      return group;
+    }
+
+    function givenNameSummaryUnits(encodedGivenFirst, encodedGivenLast, isSingleSyllableName = false) {
+      return [
+        [encodedGivenFirst.code.initial, encodedGivenFirst.initial],
+        [encodedGivenFirst.code.vowel, encodedGivenFirst.vowel],
+        [encodedGivenFirst.code.final, encodedGivenFirst.final || "ไม่มีตัวสะกด"],
+        [encodedGivenLast.code.vowel, isSingleSyllableName ? "" : encodedGivenLast.vowel],
+        [encodedGivenLast.code.final, isSingleSyllableName ? "" : (encodedGivenLast.final || "ไม่มีตัวสะกด")]
+      ];
+    }
+
+    function encodedGivenLastSyllable(syllable, isSingleSyllableName) {
+      const encoded = encodeSyllable(syllable);
+      if (!isSingleSyllableName) return encoded;
+
+      // A one-syllable given name has no distinct final syllable. The clinic
+      // reserves its last two positions for 00 rather than re-encoding it.
+      return { ...encoded, code: { ...encoded.code, vowel: 0, final: 0 } };
+    }
+
+    function encodedSurnameLastSyllable(syllable, isSingleSyllableSurname) {
+      const encoded = encodeSyllable(syllable, SURNAME_VOWEL_CODES);
+      if (!isSingleSyllableSurname) return encoded;
+
+      // A one-syllable surname has no distinct final syllable. Reserve its
+      // final surname position for 0 rather than repeating the vowel code.
+      return { ...encoded, code: { ...encoded.code, vowel: 0 } };
+    }
+
+    function renderSummaryBreakdown(encodedGivenFirst, encodedGivenLast, encodedSurnameFirst, encodedSurnameLast, {
+      isSingleSyllableGivenName = false,
+      isSingleSyllableSurname = false
+    } = {}) {
+      const summaryCode = document.getElementById("summaryCode");
+      const givenNameUnits = givenNameSummaryUnits(
+        encodedGivenFirst,
+        encodedGivenLast,
+        isSingleSyllableGivenName
+      );
+      const surnameUnits = [
+        [encodedSurnameFirst.code.vowel, encodedSurnameFirst.vowel],
+        [encodedSurnameLast.code.vowel, isSingleSyllableSurname ? "" : encodedSurnameLast.vowel]
+      ];
+
+      summaryCode.replaceChildren(
+        summaryGroup(givenNameUnits, givenNameInput.value.trim()),
+        summarySeparator(),
+        summaryGroup(surnameUnits, surnameInput.value.trim())
+      );
+    }
+
+    function renderNameRow(prefix, label, syllable, encoded, codeParts = "full", isEmpty = false) {
+      if (isEmpty) {
+        document.getElementById(`${prefix}Name`).textContent = "";
+        document.getElementById(`${prefix}Detail`).textContent = "";
+        document.getElementById(`${prefix}Codes`).replaceChildren();
+        return;
+      }
+      document.getElementById(`${prefix}Name`).textContent = `${label}: ${syllable.text}`;
+      const details = {
+        full: `พยัญชนะ ${encoded.initial} · สระ ${encoded.vowel} · ตัวสะกด ${encoded.final || "ไม่มี"}`,
+        "vowel-final": `สระ ${encoded.vowel} · ตัวสะกด ${encoded.final || "ไม่มี"}`,
+        vowel: `สระ ${encoded.vowel} · เสียง ${syllable.pronunciation}`
+      };
+      document.getElementById(`${prefix}Detail`).textContent = details[codeParts];
+      document.getElementById(`${prefix}Codes`).innerHTML = syllableCodeHtml(encoded, {
+        includeInitial: codeParts === "full",
+        includeFinal: codeParts !== "vowel"
+      });
+    }
+
+    function setVisible(element, visible) { element.style.display = visible ? "block" : "none"; }
+
+    function selectedProvider() {
+      return document.querySelector('input[name="provider"]:checked')?.value || "pythainlp";
+    }
+
+    async function requestJson(url, options) {
+      let response;
+      try {
+        response = await fetch(url, options);
+      } catch (error) {
+        throw new Error("เชื่อมต่อเซิร์ฟเวอร์วิเคราะห์ไม่ได้ โปรดตรวจสอบว่าเปิดเว็บผ่าน Flask และลองอีกครั้ง");
+      }
+
+      const responseText = await response.text();
+      let body;
+      try {
+        body = responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        const contentType = response.headers.get("content-type") || "";
+        const receivedHtml = contentType.includes("text/html") || /^\s*<!doctype\s+html/i.test(responseText);
+        if (receivedHtml) {
+          throw new Error("เซิร์ฟเวอร์ส่งหน้าเว็บกลับมาแทนข้อมูล API โปรดเปิดแอปผ่าน Flask ที่ http://127.0.0.1:5000 แล้วลองอีกครั้ง");
+        }
+        throw new Error(`เซิร์ฟเวอร์ตอบกลับในรูปแบบที่ไม่ถูกต้อง (HTTP ${response.status})`);
+      }
+
+      if (!response.ok) {
+        throw new Error(body?.error?.message || `ไม่สามารถวิเคราะห์ข้อมูลได้ (HTTP ${response.status})`);
+      }
+      return body;
+    }
+
+    function renderEncodedResults(syllables) {
+      const encodedGivenFirst = encodeSyllable(syllables.givenFirst);
+      const encodedGivenLast = encodedGivenLastSyllable(
+        syllables.givenLast,
+        syllables.isSingleSyllableGivenName
+      );
+      const encodedSurnameFirst = encodeSyllable(syllables.surnameFirst, SURNAME_VOWEL_CODES);
+      const encodedSurnameLast = encodedSurnameLastSyllable(
+        syllables.surnameLast,
+        syllables.isSingleSyllableSurname
+      );
+      renderSummaryBreakdown(encodedGivenFirst, encodedGivenLast, encodedSurnameFirst, encodedSurnameLast, {
+        isSingleSyllableGivenName: syllables.isSingleSyllableGivenName,
+        isSingleSyllableSurname: syllables.isSingleSyllableSurname
+      });
+      renderNameRow("givenFirst", "ชื่อพยางค์แรก", syllables.givenFirst, encodedGivenFirst);
+      renderNameRow("givenLast", "ชื่อพยางค์สุดท้าย", syllables.givenLast, encodedGivenLast, "vowel-final", syllables.isSingleSyllableGivenName);
+      renderNameRow("surnameFirst", "นามสกุลพยางค์แรก", syllables.surnameFirst, encodedSurnameFirst, "vowel");
+      renderNameRow("surnameLast", "นามสกุลพยางค์สุดท้าย", syllables.surnameLast, encodedSurnameLast, "vowel", syllables.isSingleSyllableSurname);
+      setVisible(results, true);
+    }
+
+    function selectedSyllablesFromResponse(body) {
+      return {
+        givenFirst: selectedSyllable(body.given_name, "first"),
+        givenLast: selectedSyllable(body.given_name, "last"),
+        isSingleSyllableGivenName:
+          body.given_name.first_syllable_index === body.given_name.last_syllable_index,
+        surnameFirst: selectedSyllable(body.surname, "first"),
+        surnameLast: selectedSyllable(body.surname, "last"),
+        isSingleSyllableSurname:
+          body.surname.first_syllable_index === body.surname.last_syllable_index
+      };
+    }
+
+    async function convert() {
+      setVisible(errorBox, false);
+      setVisible(warningBox, false);
+      setVisible(results, false);
+      convertButton.disabled = true;
+      convertButton.textContent = "กำลังวิเคราะห์...";
+
+      try {
+        const body = await requestJson("/api/v1/pronunciations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            given_name: givenNameInput.value,
+            surname: surnameInput.value,
+            provider: selectedProvider()
+          })
+        });
+
+        const warnings = [...body.given_name.warnings, ...body.surname.warnings];
+        const syllables = selectedSyllablesFromResponse(body);
+        const blockingWarnings = warnings.filter(warning => !(
+          warning.code === "single_syllable_name" &&
+          (warning.field === "given_name" || warning.field === "surname")
+        ));
+        if (blockingWarnings.length) {
+          warningBox.textContent = `${blockingWarnings.map(warning => warning.message).join(" ")} โปรดแก้ไขชื่อหรือนามสกุลในช่องด้านบน แล้ววิเคราะห์อีกครั้ง.`;
+          setVisible(warningBox, true);
+          return;
+        }
+
+        renderEncodedResults(syllables);
+      } catch (error) {
+        errorBox.textContent = error.message;
+        setVisible(errorBox, true);
+      } finally {
+        convertButton.disabled = false;
+        convertButton.textContent = "วิเคราะห์และสร้างรหัส";
+      }
+    }
+
+    initializeSpeechRecognition();
+    convertButton.addEventListener("click", convert);
+    [givenNameInput, surnameInput].forEach(input => input.addEventListener("keydown", event => { if (event.key === "Enter") convert(); }));
+    exampleButton.addEventListener("click", () => { givenNameInput.value = "สมชาย"; surnameInput.value = "ใจดี"; convert(); });
+  </script>
+</body>
+</html>
