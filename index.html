@@ -373,10 +373,23 @@
 
     .row-name { font-size: 16px; font-weight: 700; }
     .row-detail { margin-top: 4px; color: var(--muted); font-size: 13px; }
-    .codes { display: flex; align-items: center; gap: 6px; }
+    .codes { display: flex; align-items: flex-start; gap: 8px; }
+
+    .code-unit { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .code-label {
+      max-width: 64px;
+      overflow-wrap: anywhere;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+    }
 
     .code {
+      width: auto;
       min-width: 42px;
+      margin: 0;
       padding: 8px 9px;
       border-radius: 8px;
       color: var(--forest);
@@ -385,9 +398,100 @@
       font-weight: 800;
       text-align: center;
       background: #e4f0e6;
+      box-shadow: none;
     }
 
-    .dot { color: #9cad9f; }
+    .dot { margin-top: 8px; color: #9cad9f; }
+
+    .code.editable {
+      border: 1px dashed transparent;
+      cursor: pointer;
+      font: inherit;
+      transition: border-color 140ms ease, background 140ms ease;
+    }
+    .code.editable:hover, .code.editable:focus-visible { border-color: var(--forest); background: #d8ecdc; }
+    .code.editable[aria-expanded="true"] { border-color: var(--forest); background: #d8ecdc; }
+    .code.edited { box-shadow: inset 0 0 0 2px #d6a946; }
+    .code.code-missing { color: var(--error-ink); background: var(--error-bg); box-shadow: inset 0 0 0 2px var(--error-ink); }
+
+    .row-name-text.editable {
+      width: auto;
+      margin: 0;
+      border: 0;
+      padding: 0 2px;
+      color: inherit;
+      font: inherit;
+      font-weight: inherit;
+      text-decoration: underline dashed;
+      text-underline-offset: 3px;
+      background: transparent;
+      box-shadow: none;
+      cursor: pointer;
+    }
+    .row-name-text.editable:hover, .row-name-text.editable:focus-visible { color: var(--forest); }
+    .row-name-text.edited { text-decoration-color: #d6a946; text-decoration-style: solid; }
+
+    .field-menu {
+      position: absolute;
+      z-index: 40;
+      max-width: min(88vw, 320px);
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--paper);
+      box-shadow: 0 12px 32px rgba(22, 41, 35, 0.22);
+    }
+    .field-menu-title {
+      margin: 2px 8px 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .field-menu-option {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      width: 100%;
+      margin: 0;
+      padding: 8px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--ink);
+      font: inherit;
+      font-size: 15px;
+      text-align: left;
+      background: transparent;
+      box-shadow: none;
+      cursor: pointer;
+    }
+    .field-menu-option:hover, .field-menu-option:focus-visible { background: var(--mist); }
+    .field-menu-option.selected { color: var(--forest); font-weight: 800; background: #e4f0e6; }
+    .field-menu-sub { color: var(--muted); font-size: 12px; font-weight: 400; }
+
+    .summary-pending {
+      margin: 4px 0 0;
+      color: #f0c266;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .reset-corrections {
+      display: none;
+      width: auto;
+      margin: 14px 0 0;
+      padding: 7px 12px;
+      border: 1px solid #d6a946;
+      border-radius: 999px;
+      color: var(--warning-ink);
+      font-size: 13px;
+      font-weight: 800;
+      background: #fffaf0;
+      box-shadow: none;
+    }
+    .reset-corrections:hover:not(:disabled) { transform: none; box-shadow: none; background: #fff1d8; }
 
     .example {
       width: auto;
@@ -472,6 +576,8 @@
           <p class="summary-label">รหัสรวม 8 หลัก</p>
           <div id="summaryCode" class="summary-code"></div>
         </section>
+        <button id="resetCorrectionsButton" class="reset-corrections" type="button">↺ รีเซ็ตการแก้ไขทั้งหมด</button>
+        <p class="hint">คลิกที่พยางค์หรือรหัสที่คิดว่าไม่ถูกต้อง เพื่อเลือกค่าที่ถูกต้องจากตัวเลือก</p>
 
         <div class="breakdowns">
           <div class="row">
@@ -538,6 +644,7 @@
     const errorBox = document.getElementById("error");
     const warningBox = document.getElementById("warning");
     const results = document.getElementById("results");
+    const resetCorrectionsButton = document.getElementById("resetCorrectionsButton");
     const speechStatus = document.getElementById("speechStatus");
     const speechPrivacy = document.getElementById("speechPrivacy");
     const speechFields = {
@@ -776,34 +883,318 @@
         initial: value.initial,
         vowel: value.vowel,
         final: value.final,
-        final_group: value.final_group
+        final_group: value.final_group,
+        pronunciation: value.pronunciation,
+        edited: value.edited || {}
       };
       const code = {
-        initial: INITIAL_CODES[parsed.initial],
-        vowel: vowelCodes[parsed.vowel],
-        final: FINAL_CODE_MAP[parsed.final] ?? FINAL_CODE_MAP[parsed.final_group]
+        initial: INITIAL_CODES[parsed.initial] ?? null,
+        vowel: vowelCodes[parsed.vowel] ?? null,
+        final: FINAL_CODE_MAP[parsed.final] ?? FINAL_CODE_MAP[parsed.final_group] ?? null
       };
-      const missing = Object.entries(code).filter(([, value]) => value === undefined).map(([part]) => part);
-      if (missing.length) throw new Error(`ยังไม่มีรหัส${missing.join(", ")}สำหรับ "${parsed.text}"`);
-      return { ...parsed, code };
+      // A code that ThaiNLP could not map stays `null` here rather than
+      // throwing, so the UI can still render the row and let the user pick a
+      // correct value from the field's own dropdown instead of dead-ending.
+      const missing = Object.entries(code).filter(([, digit]) => digit === null).map(([part]) => part);
+      return { ...parsed, code, missing };
     }
 
-    function selectedSyllable(nameResult, position) {
-      const index = position === "first" ? nameResult.first_syllable_index : nameResult.last_syllable_index;
-      const syllable = nameResult.syllables[index];
-      if (!syllable?.encoding_form || !syllable.initial || !syllable.vowel || (!Object.hasOwn(syllable, "final") && !syllable.final_group)) {
-        throw new Error("API ไม่ได้ส่งข้อมูลพยางค์ครบสำหรับเข้ารหัส");
+    // Manual-correction option tables. These reuse the clinic code tables
+    // above so a correction can only ever select an already-valid code.
+    const INITIAL_OPTIONS = Object.entries(INITIAL_CODES)
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([letter, code]) => ({ value: letter, label: letter, code }));
+
+    const FINAL_OPTIONS = [
+      { value: "", label: "ไม่มีตัวสะกด", group: "แม่ ก กา", code: 0 },
+      { value: "ก", label: "ก", group: "แม่กก", code: 1 },
+      { value: "ด", label: "ด", group: "แม่กด", code: 2 },
+      { value: "บ", label: "บ", group: "แม่กบ", code: 3 },
+      { value: "ง", label: "ง", group: "แม่กง", code: 4 },
+      { value: "น", label: "น", group: "แม่กน", code: 5 },
+      { value: "ม", label: "ม", group: "แม่กม", code: 6 },
+      { value: "ย", label: "ย", group: "แม่เกย", code: 7 },
+      { value: "ว", label: "ว", group: "แม่เกอว", code: 8 }
+    ];
+
+    function vowelOptions(vowelCodes) {
+      return Object.entries(vowelCodes).map(([name, code]) => ({ value: name, label: name, code }));
+    }
+
+    const FIELD_LABELS = { syllable: "พยางค์", initial: "พยัญชนะต้น", vowel: "สระ", final: "ตัวสะกด" };
+
+    // --- Correction state ---------------------------------------------
+    // Each of the four encoded positions (givenFirst/givenLast/surnameFirst/
+    // surnameLast) tracks which candidate syllable from ThaiNLP's own
+    // syllable list is currently selected, plus any manual field overrides
+    // layered on top of that syllable's initial/vowel/final. Nothing here is
+    // sent back to the API; corrections only change how the browser encoder
+    // reads the syllable ThaiNLP already returned.
+    let analysisState = null;
+
+    function positionSourceKey(position) {
+      return position.startsWith("given") ? "given_name" : "surname";
+    }
+
+    function positionList(position) {
+      return analysisState[positionSourceKey(position)].syllables;
+    }
+
+    function defaultIndex(position) {
+      const source = analysisState[positionSourceKey(position)];
+      return position.endsWith("First") ? source.first_syllable_index : source.last_syllable_index;
+    }
+
+    function initAnalysisState(body) {
+      analysisState = {
+        given_name: body.given_name,
+        surname: body.surname,
+        positions: {
+          givenFirst: { index: body.given_name.first_syllable_index, overrides: {} },
+          givenLast: { index: body.given_name.last_syllable_index, overrides: {} },
+          surnameFirst: { index: body.surname.first_syllable_index, overrides: {} },
+          surnameLast: { index: body.surname.last_syllable_index, overrides: {} }
+        }
+      };
+    }
+
+    function hasAnyCorrection() {
+      return Object.entries(analysisState.positions).some(([position, state]) =>
+        state.index !== defaultIndex(position) || Object.keys(state.overrides).length > 0
+      );
+    }
+
+    function resolvedSyllable(position) {
+      const state = analysisState.positions[position];
+      const base = positionList(position)[state.index];
+      return {
+        text: base.encoding_form,
+        encoding_form: base.encoding_form,
+        pronunciation: base.pronunciation,
+        initial: "initial" in state.overrides ? state.overrides.initial : base.initial,
+        vowel: "vowel" in state.overrides ? state.overrides.vowel : base.vowel,
+        final: "final" in state.overrides ? state.overrides.final : base.final,
+        final_group: base.final_group,
+        edited: {
+          syllable: state.index !== defaultIndex(position),
+          initial: "initial" in state.overrides,
+          vowel: "vowel" in state.overrides,
+          final: "final" in state.overrides
+        }
+      };
+    }
+
+    // --- Correction dropdown -------------------------------------------
+    let closeOpenFieldMenu = null;
+
+    function closeFieldMenu() {
+      if (closeOpenFieldMenu) {
+        closeOpenFieldMenu();
+        closeOpenFieldMenu = null;
       }
-      return syllable;
     }
 
-    function codePill(value) { return `<span class="code">${value}</span>`; }
-    function syllableCodeHtml(encoded, { includeInitial = true, includeFinal = true } = {}) {
-      const parts = [];
-      if (includeInitial) parts.push(codePill(encoded.code.initial));
-      parts.push(codePill(encoded.code.vowel));
-      if (includeFinal) parts.push(codePill(encoded.code.final));
-      return parts.join('<span class="dot">•</span>');
+    function openFieldMenu(anchor, { title, options, isSelected, onSelect }) {
+      const wasOpenForAnchor = anchor.getAttribute("aria-expanded") === "true";
+      closeFieldMenu();
+      if (wasOpenForAnchor) return;
+
+      const menu = document.createElement("div");
+      menu.className = "field-menu";
+      menu.setAttribute("role", "listbox");
+
+      const heading = document.createElement("p");
+      heading.className = "field-menu-title";
+      heading.textContent = title;
+      menu.appendChild(heading);
+
+      options.forEach(option => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "field-menu-option";
+        item.setAttribute("role", "option");
+        const selected = isSelected(option);
+        item.setAttribute("aria-selected", String(selected));
+        if (selected) item.classList.add("selected");
+
+        const value = document.createElement("span");
+        value.textContent = option.label ?? option.value;
+        item.appendChild(value);
+        if (option.sub) {
+          const sub = document.createElement("span");
+          sub.className = "field-menu-sub";
+          sub.textContent = option.sub;
+          item.appendChild(sub);
+        }
+
+        item.addEventListener("click", () => {
+          onSelect(option);
+          closeFieldMenu();
+        });
+        menu.appendChild(item);
+      });
+
+      document.body.appendChild(menu);
+      const anchorRect = anchor.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const maxLeft = window.scrollX + document.documentElement.clientWidth - menuRect.width - 8;
+      const left = Math.max(window.scrollX + 8, Math.min(anchorRect.left + window.scrollX, maxLeft));
+      menu.style.left = `${left}px`;
+      menu.style.top = `${anchorRect.bottom + window.scrollY + 6}px`;
+      anchor.setAttribute("aria-expanded", "true");
+      menu.querySelector(".field-menu-option")?.focus();
+
+      function onDocumentClick(event) {
+        if (!menu.contains(event.target) && event.target !== anchor) closeFieldMenu();
+      }
+      function onKeydown(event) {
+        if (event.key === "Escape") {
+          closeFieldMenu();
+          anchor.focus();
+        }
+      }
+      // Defer listener registration so the click that opened this menu (still
+      // bubbling to document) can't immediately close it again.
+      setTimeout(() => {
+        document.addEventListener("click", onDocumentClick, true);
+        document.addEventListener("keydown", onKeydown, true);
+      }, 0);
+
+      closeOpenFieldMenu = () => {
+        anchor.setAttribute("aria-expanded", "false");
+        menu.remove();
+        document.removeEventListener("click", onDocumentClick, true);
+        document.removeEventListener("keydown", onKeydown, true);
+      };
+    }
+
+    function openSyllableMenu(trigger, position) {
+      const list = positionList(position);
+      if (list.length < 2) return;
+      const state = analysisState.positions[position];
+      openFieldMenu(trigger, {
+        title: "เลือกพยางค์ที่ถูกต้อง",
+        options: list.map((syllable, index) => ({
+          index,
+          label: syllable.text,
+          sub: syllable.pronunciation || ""
+        })),
+        isSelected: option => option.index === state.index,
+        onSelect: option => {
+          state.index = option.index;
+          state.overrides = {};
+          rerender();
+        }
+      });
+    }
+
+    function openInitialMenu(trigger, position) {
+      const state = analysisState.positions[position];
+      const base = positionList(position)[state.index];
+      const current = "initial" in state.overrides ? state.overrides.initial : base.initial;
+      openFieldMenu(trigger, {
+        title: "เลือกพยัญชนะต้นที่ถูกต้อง",
+        options: INITIAL_OPTIONS.map(option => ({ ...option, sub: `รหัส ${option.code}` })),
+        isSelected: option => option.value === current,
+        onSelect: option => {
+          if (option.value === base.initial) delete state.overrides.initial;
+          else state.overrides.initial = option.value;
+          rerender();
+        }
+      });
+    }
+
+    function openVowelMenu(trigger, position) {
+      const state = analysisState.positions[position];
+      const base = positionList(position)[state.index];
+      const table = position.startsWith("surname") ? SURNAME_VOWEL_CODES : VOWEL_CODES;
+      const current = "vowel" in state.overrides ? state.overrides.vowel : base.vowel;
+      openFieldMenu(trigger, {
+        title: "เลือกสระที่ถูกต้อง",
+        options: vowelOptions(table).map(option => ({ ...option, sub: `รหัส ${option.code}` })),
+        isSelected: option => option.value === current,
+        onSelect: option => {
+          if (option.value === base.vowel) delete state.overrides.vowel;
+          else state.overrides.vowel = option.value;
+          rerender();
+        }
+      });
+    }
+
+    function openFinalMenu(trigger, position) {
+      const state = analysisState.positions[position];
+      const base = positionList(position)[state.index];
+      const current = "final" in state.overrides ? state.overrides.final : (base.final || "");
+      openFieldMenu(trigger, {
+        title: "เลือกตัวสะกดที่ถูกต้อง",
+        options: FINAL_OPTIONS.map(option => ({ ...option, sub: `${option.group} · รหัส ${option.code}` })),
+        isSelected: option => option.value === current,
+        onSelect: option => {
+          if (option.value === (base.final || "")) delete state.overrides.final;
+          else state.overrides.final = option.value;
+          rerender();
+        }
+      });
+    }
+
+    function handleFieldTriggerClick(trigger) {
+      const position = trigger.dataset.position;
+      const field = trigger.dataset.field;
+      if (field === "syllable") openSyllableMenu(trigger, position);
+      else if (field === "initial") openInitialMenu(trigger, position);
+      else if (field === "vowel") openVowelMenu(trigger, position);
+      else if (field === "final") openFinalMenu(trigger, position);
+    }
+
+    function codePillElement(position, field, value, edited) {
+      const pill = document.createElement("button");
+      pill.type = "button";
+      const isMissing = value === null;
+      pill.className = "code editable" + (edited ? " edited" : "") + (isMissing ? " code-missing" : "");
+      pill.textContent = isMissing ? "?" : String(value);
+      pill.dataset.position = position;
+      pill.dataset.field = field;
+      pill.setAttribute("aria-haspopup", "listbox");
+      pill.setAttribute("aria-expanded", "false");
+      pill.setAttribute("aria-label", `แก้ไข${FIELD_LABELS[field]} (ปัจจุบัน ${isMissing ? "ยังไม่ได้เลือก" : value})`);
+      return pill;
+    }
+
+    function dotElement() {
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.setAttribute("aria-hidden", "true");
+      dot.textContent = "•";
+      return dot;
+    }
+
+    function codeLabelElement(text) {
+      const label = document.createElement("span");
+      label.className = "code-label";
+      label.textContent = text;
+      return label;
+    }
+
+    function syllablePills(encoded, { includeInitial = true, includeFinal = true } = {}) {
+      const pills = [];
+      if (includeInitial) pills.push({ field: "initial", value: encoded.code.initial, label: encoded.initial, edited: Boolean(encoded.edited?.initial) });
+      pills.push({ field: "vowel", value: encoded.code.vowel, label: encoded.vowel, edited: Boolean(encoded.edited?.vowel) });
+      if (includeFinal) pills.push({ field: "final", value: encoded.code.final, label: encoded.final || "ไม่มี", edited: Boolean(encoded.edited?.final) });
+      return pills;
+    }
+
+    function renderSyllableCodes(container, position, encoded, options) {
+      container.replaceChildren();
+      syllablePills(encoded, options).forEach((pill, index) => {
+        if (index > 0) container.appendChild(dotElement());
+        const unit = document.createElement("div");
+        unit.className = "code-unit";
+        unit.append(
+          codePillElement(position, pill.field, pill.value, pill.edited),
+          codeLabelElement(pill.label)
+        );
+        container.appendChild(unit);
+      });
     }
 
     function summaryUnit(value, breakdown) {
@@ -863,20 +1254,27 @@
 
     function encodedGivenLastSyllable(syllable, isSingleSyllableName) {
       const encoded = encodeSyllable(syllable);
-      if (!isSingleSyllableName) return encoded;
+      if (!isSingleSyllableName) {
+        // The initial is never shown or used for the last given-name
+        // syllable, so an unmapped initial must not block the summary code.
+        return { ...encoded, missing: encoded.missing.filter(part => part !== "initial") };
+      }
 
       // A one-syllable given name has no distinct final syllable. The clinic
       // reserves its last two positions for 00 rather than re-encoding it.
-      return { ...encoded, code: { ...encoded.code, vowel: 0, final: 0 } };
+      return { ...encoded, code: { ...encoded.code, vowel: 0, final: 0 }, missing: [] };
     }
 
     function encodedSurnameLastSyllable(syllable, isSingleSyllableSurname) {
       const encoded = encodeSyllable(syllable, SURNAME_VOWEL_CODES);
-      if (!isSingleSyllableSurname) return encoded;
+      if (!isSingleSyllableSurname) {
+        // Only the vowel is ever shown or used for a surname syllable.
+        return { ...encoded, missing: encoded.missing.filter(part => part === "vowel") };
+      }
 
       // A one-syllable surname has no distinct final syllable. Reserve its
       // final surname position for 0 rather than repeating the vowel code.
-      return { ...encoded, code: { ...encoded.code, vowel: 0 } };
+      return { ...encoded, code: { ...encoded.code, vowel: 0 }, missing: [] };
     }
 
     function renderSummaryBreakdown(encodedGivenFirst, encodedGivenLast, encodedSurnameFirst, encodedSurnameLast, {
@@ -884,6 +1282,17 @@
       isSingleSyllableSurname = false
     } = {}) {
       const summaryCode = document.getElementById("summaryCode");
+      const isPending = [encodedGivenFirst, encodedGivenLast, encodedSurnameFirst, encodedSurnameLast]
+        .some(encoded => encoded.missing.length > 0);
+
+      if (isPending) {
+        const pending = document.createElement("p");
+        pending.className = "summary-pending";
+        pending.textContent = 'ยังสร้างรหัสรวมไม่ได้ กรุณาเลือกค่าที่ถูกต้องในช่องที่ทำเครื่องหมาย "?" ด้านล่าง';
+        summaryCode.replaceChildren(pending);
+        return;
+      }
+
       const givenNameUnits = givenNameSummaryUnits(
         encodedGivenFirst,
         encodedGivenLast,
@@ -901,21 +1310,43 @@
       );
     }
 
-    function renderNameRow(prefix, label, syllable, encoded, codeParts = "full", isEmpty = false) {
+    function renderNameRow(prefix, label, position, syllable, encoded, codeParts = "full", isEmpty = false) {
+      const nameEl = document.getElementById(`${prefix}Name`);
+      const detailEl = document.getElementById(`${prefix}Detail`);
+      const codesEl = document.getElementById(`${prefix}Codes`);
+
       if (isEmpty) {
-        document.getElementById(`${prefix}Name`).textContent = "";
-        document.getElementById(`${prefix}Detail`).textContent = "";
-        document.getElementById(`${prefix}Codes`).replaceChildren();
+        nameEl.replaceChildren();
+        detailEl.textContent = "";
+        detailEl.style.display = "none";
+        codesEl.replaceChildren();
         return;
       }
-      document.getElementById(`${prefix}Name`).textContent = `${label}: ${syllable.text}`;
-      const details = {
-        full: `พยัญชนะ ${encoded.initial} · สระ ${encoded.vowel} · ตัวสะกด ${encoded.final || "ไม่มี"}`,
-        "vowel-final": `สระ ${encoded.vowel} · ตัวสะกด ${encoded.final || "ไม่มี"}`,
-        vowel: `สระ ${encoded.vowel} · เสียง ${syllable.pronunciation}`
-      };
-      document.getElementById(`${prefix}Detail`).textContent = details[codeParts];
-      document.getElementById(`${prefix}Codes`).innerHTML = syllableCodeHtml(encoded, {
+
+      nameEl.replaceChildren(document.createTextNode(`${label}: `));
+      const list = positionList(position);
+      if (list.length > 1) {
+        const nameButton = document.createElement("button");
+        nameButton.type = "button";
+        nameButton.className = "row-name-text editable" + (encoded.edited?.syllable ? " edited" : "");
+        nameButton.textContent = syllable.text;
+        nameButton.dataset.position = position;
+        nameButton.dataset.field = "syllable";
+        nameButton.setAttribute("aria-haspopup", "listbox");
+        nameButton.setAttribute("aria-expanded", "false");
+        nameButton.setAttribute("aria-label", `แก้ไข${FIELD_LABELS.syllable} (ปัจจุบัน ${syllable.text})`);
+        nameEl.appendChild(nameButton);
+      } else {
+        nameEl.appendChild(document.createTextNode(syllable.text));
+      }
+
+      // The initial/vowel/final breakdown now sits directly under each code
+      // pill (see renderSyllableCodes); this line is only left for the raw
+      // pronunciation, which the syllable text alone doesn't always convey.
+      const detailText = codeParts === "vowel" ? `เสียง ${syllable.pronunciation}` : "";
+      detailEl.textContent = detailText;
+      detailEl.style.display = detailText ? "" : "none";
+      renderSyllableCodes(codesEl, position, encoded, {
         includeInitial: codeParts === "full",
         includeFinal: codeParts !== "vowel"
       });
@@ -954,42 +1385,35 @@
       return body;
     }
 
-    function renderEncodedResults(syllables) {
-      const encodedGivenFirst = encodeSyllable(syllables.givenFirst);
-      const encodedGivenLast = encodedGivenLastSyllable(
-        syllables.givenLast,
-        syllables.isSingleSyllableGivenName
-      );
-      const encodedSurnameFirst = encodeSyllable(syllables.surnameFirst, SURNAME_VOWEL_CODES);
-      const encodedSurnameLast = encodedSurnameLastSyllable(
-        syllables.surnameLast,
-        syllables.isSingleSyllableSurname
-      );
-      renderSummaryBreakdown(encodedGivenFirst, encodedGivenLast, encodedSurnameFirst, encodedSurnameLast, {
-        isSingleSyllableGivenName: syllables.isSingleSyllableGivenName,
-        isSingleSyllableSurname: syllables.isSingleSyllableSurname
-      });
-      renderNameRow("givenFirst", "ชื่อพยางค์แรก", syllables.givenFirst, encodedGivenFirst);
-      renderNameRow("givenLast", "ชื่อพยางค์สุดท้าย", syllables.givenLast, encodedGivenLast, "vowel-final", syllables.isSingleSyllableGivenName);
-      renderNameRow("surnameFirst", "นามสกุลพยางค์แรก", syllables.surnameFirst, encodedSurnameFirst, "vowel");
-      renderNameRow("surnameLast", "นามสกุลพยางค์สุดท้าย", syllables.surnameLast, encodedSurnameLast, "vowel", syllables.isSingleSyllableSurname);
-      setVisible(results, true);
-    }
+    function rerender() {
+      const isSingleSyllableGivenName = analysisState.positions.givenFirst.index === analysisState.positions.givenLast.index;
+      const isSingleSyllableSurname = analysisState.positions.surnameFirst.index === analysisState.positions.surnameLast.index;
 
-    function selectedSyllablesFromResponse(body) {
-      return {
-        givenFirst: selectedSyllable(body.given_name, "first"),
-        givenLast: selectedSyllable(body.given_name, "last"),
-        isSingleSyllableGivenName:
-          body.given_name.first_syllable_index === body.given_name.last_syllable_index,
-        surnameFirst: selectedSyllable(body.surname, "first"),
-        surnameLast: selectedSyllable(body.surname, "last"),
-        isSingleSyllableSurname:
-          body.surname.first_syllable_index === body.surname.last_syllable_index
-      };
+      const givenFirstSyllable = resolvedSyllable("givenFirst");
+      const givenLastSyllable = resolvedSyllable("givenLast");
+      const surnameFirstSyllable = resolvedSyllable("surnameFirst");
+      const surnameLastSyllable = resolvedSyllable("surnameLast");
+
+      const encodedGivenFirst = encodeSyllable(givenFirstSyllable);
+      const encodedGivenLast = encodedGivenLastSyllable(givenLastSyllable, isSingleSyllableGivenName);
+      const encodedSurnameFirstRaw = encodeSyllable(surnameFirstSyllable, SURNAME_VOWEL_CODES);
+      const encodedSurnameFirst = { ...encodedSurnameFirstRaw, missing: encodedSurnameFirstRaw.missing.filter(part => part === "vowel") };
+      const encodedSurnameLast = encodedSurnameLastSyllable(surnameLastSyllable, isSingleSyllableSurname);
+
+      renderSummaryBreakdown(encodedGivenFirst, encodedGivenLast, encodedSurnameFirst, encodedSurnameLast, {
+        isSingleSyllableGivenName,
+        isSingleSyllableSurname
+      });
+      renderNameRow("givenFirst", "ชื่อพยางค์แรก", "givenFirst", givenFirstSyllable, encodedGivenFirst);
+      renderNameRow("givenLast", "ชื่อพยางค์สุดท้าย", "givenLast", givenLastSyllable, encodedGivenLast, "vowel-final", isSingleSyllableGivenName);
+      renderNameRow("surnameFirst", "นามสกุลพยางค์แรก", "surnameFirst", surnameFirstSyllable, encodedSurnameFirst, "vowel");
+      renderNameRow("surnameLast", "นามสกุลพยางค์สุดท้าย", "surnameLast", surnameLastSyllable, encodedSurnameLast, "vowel", isSingleSyllableSurname);
+      setVisible(results, true);
+      setVisible(resetCorrectionsButton, hasAnyCorrection());
     }
 
     async function convert() {
+      closeFieldMenu();
       setVisible(errorBox, false);
       setVisible(warningBox, false);
       setVisible(results, false);
@@ -1007,19 +1431,14 @@
           })
         });
 
-        const warnings = [...body.given_name.warnings, ...body.surname.warnings];
-        const syllables = selectedSyllablesFromResponse(body);
-        const blockingWarnings = warnings.filter(warning => !(
-          warning.code === "single_syllable_name" &&
-          (warning.field === "given_name" || warning.field === "surname")
-        ));
-        if (blockingWarnings.length) {
-          warningBox.textContent = `${blockingWarnings.map(warning => warning.message).join(" ")} โปรดแก้ไขชื่อหรือนามสกุลในช่องด้านบน แล้ววิเคราะห์อีกครั้ง.`;
-          setVisible(warningBox, true);
-          return;
-        }
+        initAnalysisState(body);
+        rerender();
 
-        renderEncodedResults(syllables);
+        const warnings = [...body.given_name.warnings, ...body.surname.warnings];
+        if (warnings.length) {
+          warningBox.textContent = `${warnings.map(warning => warning.message).join(" ")} ตรวจสอบผลลัพธ์ด้านล่าง แล้วคลิกพยางค์หรือรหัสที่ไม่ถูกต้องเพื่อแก้ไข`;
+          setVisible(warningBox, true);
+        }
       } catch (error) {
         errorBox.textContent = error.message;
         setVisible(errorBox, true);
@@ -1033,6 +1452,17 @@
     convertButton.addEventListener("click", convert);
     [givenNameInput, surnameInput].forEach(input => input.addEventListener("keydown", event => { if (event.key === "Enter") convert(); }));
     exampleButton.addEventListener("click", () => { givenNameInput.value = "สมชาย"; surnameInput.value = "ใจดี"; convert(); });
+    results.addEventListener("click", event => {
+      const trigger = event.target.closest("[data-field]");
+      if (trigger) handleFieldTriggerClick(trigger);
+    });
+    resetCorrectionsButton.addEventListener("click", () => {
+      if (!analysisState) return;
+      for (const position of Object.keys(analysisState.positions)) {
+        analysisState.positions[position] = { index: defaultIndex(position), overrides: {} };
+      }
+      rerender();
+    });
   </script>
 </body>
 </html>
