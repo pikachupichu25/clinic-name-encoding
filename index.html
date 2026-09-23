@@ -255,6 +255,32 @@
 
     button:disabled { cursor: wait; opacity: 0.65; }
 
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 26px;
+    }
+
+    .button-row button { width: auto; margin-top: 0; }
+    .button-row .convert-button { flex: 1; }
+
+    .clear-button {
+      flex: 0 0 auto;
+      color: var(--forest);
+      background: transparent;
+      border: 1px solid var(--forest);
+      box-shadow: none;
+    }
+
+    .clear-button:hover:not(:disabled) {
+      color: white;
+      background: var(--forest);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .clear-button:active:not(:disabled) { transform: none; box-shadow: none; }
+
     .message, .results { display: none; }
 
     .message {
@@ -567,7 +593,10 @@
       <p id="speechPrivacy" class="speech-privacy">เมื่อใช้ไมโครโฟน เบราว์เซอร์อาจส่งเสียงไปยังบริการรู้จำเสียงของผู้ให้บริการเบราว์เซอร์ ระบบนี้ไม่บันทึกหรือส่งไฟล์เสียงไปยังคลินิก</p>
       <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
 
-      <button id="convertButton" type="button">วิเคราะห์และสร้างรหัส</button>
+      <div class="button-row">
+        <button id="convertButton" class="convert-button" type="button">วิเคราะห์และสร้างรหัส</button>
+        <button id="clearButton" class="clear-button" type="button">ล้างข้อมูล</button>
+      </div>
       <div id="error" class="message error" role="alert"></div>
       <div id="warning" class="message warning" role="status"></div>
 
@@ -640,6 +669,7 @@
     const givenNameInput = document.getElementById("givenName");
     const surnameInput = document.getElementById("surname");
     const convertButton = document.getElementById("convertButton");
+    const clearButton = document.getElementById("clearButton");
     const exampleButton = document.getElementById("exampleButton");
     const errorBox = document.getElementById("error");
     const warningBox = document.getElementById("warning");
@@ -1448,8 +1478,26 @@
       }
     }
 
+    function clearFields() {
+      closeFieldMenu();
+      if (activeRecognition) stopActiveSpeech();
+      givenNameInput.value = "";
+      surnameInput.value = "";
+      for (const field of Object.keys(speechFields)) {
+        hideSpeechPreview(field);
+        clearSpeechReview(field);
+      }
+      setSpeechStatus("");
+      analysisState = null;
+      setVisible(errorBox, false);
+      setVisible(warningBox, false);
+      setVisible(results, false);
+      givenNameInput.focus();
+    }
+
     initializeSpeechRecognition();
     convertButton.addEventListener("click", convert);
+    clearButton.addEventListener("click", clearFields);
     [givenNameInput, surnameInput].forEach(input => input.addEventListener("keydown", event => { if (event.key === "Enter") convert(); }));
     exampleButton.addEventListener("click", () => { givenNameInput.value = "สมชาย"; surnameInput.value = "ใจดี"; convert(); });
     results.addEventListener("click", event => {
